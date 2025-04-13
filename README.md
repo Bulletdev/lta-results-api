@@ -278,7 +278,7 @@ Para contribuir com código:
 ```bash
 # 1. Faça um fork do repositório
 # 2. Clone seu fork
-git clone https://github.com/seu-username/lta-results-api.git
+git clone https://github.com/bulletdev/lta-results-api.git
 
 # 3. Crie uma branch para sua feature
 git checkout -b feature/nova-funcionalidade
