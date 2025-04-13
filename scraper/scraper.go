@@ -170,16 +170,18 @@ func extractText(html, selector string) string {
 	}
 
 	// Avançar para o conteúdo
-	contentStart := html[start:].Index(">") + start + 1
-	if contentStart == -1 {
+	contentStartOffset := strings.Index(html[start:], ">")
+	if contentStartOffset == -1 {
 		return ""
 	}
+	contentStart := start + contentStartOffset + 1
 
 	// Encontrar o fim do elemento
-	contentEnd := html[contentStart:].Index("<") + contentStart
-	if contentEnd == -1 {
+	contentEndOffset := strings.Index(html[contentStart:], "<")
+	if contentEndOffset == -1 {
 		return ""
 	}
+	contentEnd := contentStart + contentEndOffset
 
 	// Extrair e limpar o texto
 	text := html[contentStart:contentEnd]
@@ -194,10 +196,11 @@ func extractDataAttribute(html, attrName string) string {
 	}
 
 	valueStart := attrStart + len(attrName) + 2 // +2 para pular ="
-	valueEnd := html[valueStart:].Index("\"") + valueStart
-	if valueEnd == -1 {
+	valueEndOffset := strings.Index(html[valueStart:], "\"")
+	if valueEndOffset == -1 {
 		return ""
 	}
+	valueEnd := valueStart + valueEndOffset
 
 	return html[valueStart:valueEnd]
 }
