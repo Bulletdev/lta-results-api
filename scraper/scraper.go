@@ -16,8 +16,8 @@ import (
 
 // URLs para scraping
 var LTA_URLS = map[string]string{
-	"sul":   "https://lolesports.com/pt-BR/season/113470241010388072/split/113470241010912363/league/113475149040947852/stage/114103277164319985",
-	"norte": "https://lolesports.com/pt-BR/season/113470241010388072/split/113470241010912363/league/113475149040947852/stage/114140723403416153",
+	"sul":   "https://maisesports.com.br/campeonatos/league-of-legends-lta-sul-split-2-2025",
+	"norte": "https://maisesports.com.br/campeonatos/league-of-legends-lta-norte-split-2-2025/",
 }
 
 // ScheduleScraping configura o agendamento do scraping
