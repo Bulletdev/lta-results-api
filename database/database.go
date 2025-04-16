@@ -18,8 +18,12 @@ func Connect() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Configurar ServerAPI
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI("mongodb+srv://bulletdev:%3CP0rdemacia%3E@lta-results.lyhv0k8.mongodb.net/?retryWrites=true&w=majority&appName=lta-results").SetServerAPIOptions(serverAPI)
+
 	var err error
-	client, err = mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGODB_URI")))
+	client, err = mongo.Connect(ctx, opts)
 	if err != nil {
 		return err
 	}
