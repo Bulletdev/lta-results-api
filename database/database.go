@@ -18,9 +18,19 @@ func Connect() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Obter credenciais das variáveis de ambiente
+	username := os.Getenv("MONGODB_USERNAME")
+	password := os.Getenv("MONGODB_PASSWORD")
+	cluster := os.Getenv("MONGODB_CLUSTER")
+
+	if username == "" || password == "" || cluster == "" {
+		log.Fatal("Variáveis de ambiente MONGODB_USERNAME, MONGODB_PASSWORD e MONGODB_CLUSTER são necessárias")
+	}
+
 	// Configurar ServerAPI
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI("mongodb+srv://bulletdev:%3CP0rdemacia%3E@lta-results.lyhv0k8.mongodb.net/?retryWrites=true&w=majority&appName=lta-results").SetServerAPIOptions(serverAPI)
+	uri := "mongodb+srv://" + username + ":" + password + "@" + cluster + "/?retryWrites=true&w=majority&appName=lta-results"
+	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 
 	var err error
 	client, err = mongo.Connect(ctx, opts)
