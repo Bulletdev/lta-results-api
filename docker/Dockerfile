@@ -74,8 +74,12 @@ COPY --from=builder /app/lta-results-api /app/lta-results-api
 # No Render, é melhor usar as variáveis de ambiente do serviço.
 # COPY .env .env
 
+# Criar diretório para dados do Chrome ANTES de mudar o usuário
+RUN mkdir /app/chrome-data
+
 # Criar um usuário não-root para executar a aplicação
 RUN groupadd -r appuser && useradd --no-log-init -r -g appuser appuser
+# Garantir que o diretório de trabalho e o diretório de dados do chrome pertençam ao novo usuário
 RUN chown -R appuser:appuser /app
 USER appuser
 

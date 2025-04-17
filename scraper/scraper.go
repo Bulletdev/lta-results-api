@@ -103,14 +103,19 @@ func ScrapeMatchResults() error {
 
 // extractHTML extrai o HTML da página usando Chrome headless
 func extractHTML(url string) (string, error) {
+
 	// Configurar contexto para o Chrome headless
 	// No Render (Linux), confie que o Chrome/Chromium está instalado
 	// e no PATH do sistema (garantido via Dockerfile/Buildpack).
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", true),
 		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("no-sandbox", true),            // Necessário em muitos ambientes de contêiner
-		chromedp.Flag("disable-dev-shm-usage", true), // Necessário em muitos ambientes de contêiner
+		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-setuid-sandbox", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
+		chromedp.Flag("no-zygote", true),
+		chromedp.Flag("user-data-dir", "/app/chrome-data"),
+		chromedp.UserDataDir("/app/chrome-data"),
 	)
 
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
