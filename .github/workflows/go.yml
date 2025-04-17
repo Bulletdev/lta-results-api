@@ -43,6 +43,6 @@ jobs:
       uses: golangci/golangci-lint-action@v3
       with:
         version: latest
-        args: --timeout=5m
+        args: --timeout=5m --out-format=colored-line-number --disable=errcheck
         skip-cache: true
         skip-pkg-cache: true
