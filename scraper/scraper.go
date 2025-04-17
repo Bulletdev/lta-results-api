@@ -54,7 +54,35 @@ func ScheduleScraping() {
 func ScrapeMatchResults() error {
 	log.Println("Iniciando extração de resultados de partidas...")
 
-	// Para cada região, extrair os resultados
+	// --- Início da Criação Única do Contexto Chrome ---
+	// Configurar contexto para o Chrome headless
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", true),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-setuid-sandbox", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
+		chromedp.Flag("no-zygote", true),
+		chromedp.Flag("user-data-dir", "/app/chrome-data"),
+		chromedp.UserDataDir("/app/chrome-data"),
+	)
+
+	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer cancelAlloc()
+
+	// Criar contexto principal do chromedp
+	mainCtx, cancelCtx := chromedp.NewContext(
+		allocCtx,
+		chromedp.WithErrorf(log.Printf),
+	)
+	defer cancelCtx()
+
+	// Criar um contexto com timeout a partir do contexto principal do chromedp
+	timeoutCtx, cancelTimeout := context.WithTimeout(mainCtx, timeout)
+	defer cancelTimeout()
+	// --- Fim da Criação Única do Contexto Chrome ---
+
+	// Para cada região, extrair os resultados usando o mesmo contexto
 	for region, url := range LTA_URLS {
 		log.Printf("Extraindo resultados da região %s...", region)
 		log.Printf("URL: %s", url)
@@ -63,16 +91,22 @@ func ScrapeMatchResults() error {
 		var html string
 		var err error
 		for i := 0; i < maxRetries; i++ {
-			html, err = extractHTML(url)
+			// Passar o contexto com timeout para extractHTML
+			html, err = extractHTML(timeoutCtx, url) // Passa o contexto
 			if err == nil {
 				break
 			}
-			log.Printf("Tentativa %d falhou: %v", i+1, err)
+			// Se o erro for context deadline exceeded, não adianta tentar de novo com o mesmo contexto
+			if err == context.DeadlineExceeded {
+				log.Printf("Timeout atingido na tentativa %d para %s. Abortando retries.", i+1, region)
+				break
+			}
+			log.Printf("Tentativa %d falhou para %s: %v", i+1, region, err)
 			time.Sleep(retryDelay)
 		}
 
 		if err != nil {
-			log.Printf("Erro ao extrair dados da região %s após %d tentativas: %v", region, maxRetries, err)
+			log.Printf("Erro ao extrair dados da região %s após tentativas: %v", region, err)
 			continue
 		}
 
@@ -101,42 +135,13 @@ func ScrapeMatchResults() error {
 	return nil
 }
 
-// extractHTML extrai o HTML da página usando Chrome headless
-func extractHTML(url string) (string, error) {
-
-	// Configurar contexto para o Chrome headless
-	// No Render (Linux), confie que o Chrome/Chromium está instalado
-	// e no PATH do sistema (garantido via Dockerfile/Buildpack).
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true),
-		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("no-sandbox", true),
-		chromedp.Flag("disable-setuid-sandbox", true),
-		chromedp.Flag("disable-dev-shm-usage", true),
-		chromedp.Flag("no-zygote", true),
-		chromedp.Flag("user-data-dir", "/app/chrome-data"),
-		chromedp.UserDataDir("/app/chrome-data"),
-	)
-
-	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	defer cancel()
-
-	// Alterado para logar apenas erros do chromedp, reduzindo verbosidade
-	ctx, cancel := chromedp.NewContext(
-		allocCtx,
-		chromedp.WithErrorf(log.Printf),
-	)
-	defer cancel()
-
-	// Adicionar timeout
-	ctx, cancel = context.WithTimeout(ctx, timeout)
-	defer cancel()
-
+// extractHTML agora recebe um contexto chromedp existente
+func extractHTML(ctx context.Context, url string) (string, error) {
 	// Variável para armazenar o HTML extraído
 	var html string
 
-	// Navegar para a URL e extrair o HTML
-	err := chromedp.Run(ctx,
+	// Navegar para a URL e extrair o HTML usando o contexto fornecido
+	err := chromedp.Run(ctx, // Usa o contexto passado como argumento
 		chromedp.Navigate(url),
 		chromedp.WaitVisible(".recent-matches", chromedp.ByQuery), // Ajuste o seletor se necessário
 		chromedp.Sleep(2*time.Second),
@@ -144,7 +149,8 @@ func extractHTML(url string) (string, error) {
 	)
 
 	if err != nil {
-		return "", fmt.Errorf("erro ao extrair HTML: %v", err)
+		// Retornar o erro original, incluindo context deadline exceeded
+		return "", fmt.Errorf("erro durante execução do chromedp: %w", err)
 	}
 
 	return html, nil
