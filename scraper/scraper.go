@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	_ "net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/bulletdev/lta-results-api/models"
 	"github.com/chromedp/chromedp"
 	"github.com/robfig/cron/v3"
@@ -16,9 +18,16 @@ import (
 
 // URLs para scraping
 var LTA_URLS = map[string]string{
-	"sul":   "https://maisesports.com.br/campeonatos/league-of-legends-lta-sul-split-2-2025",
+	"sul":   "https://maisesports.com.br/campeonatos/league-of-legends-lta-sul-split-2-2025/",
 	"norte": "https://maisesports.com.br/campeonatos/league-of-legends-lta-norte-split-2-2025/",
 }
+
+// Configurações do scraper
+const (
+	maxRetries = 3
+	retryDelay = 5 * time.Second
+	timeout    = 60 * time.Second
+)
 
 // ScheduleScraping configura o agendamento do scraping
 func ScheduleScraping() {
@@ -50,43 +59,22 @@ func ScrapeMatchResults() error {
 		log.Printf("Extraindo resultados da região %s...", region)
 		log.Printf("URL: %s", url)
 
-		// Configurar contexto para o Chrome headless
-		opts := append(chromedp.DefaultExecAllocatorOptions[:],
-			chromedp.Flag("headless", true),
-			chromedp.Flag("disable-gpu", true),
-			chromedp.Flag("no-sandbox", true),
-			chromedp.Flag("disable-dev-shm-usage", true),
-		)
-
-		allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-		defer cancel()
-
-		ctx, cancel := chromedp.NewContext(
-			allocCtx,
-			chromedp.WithLogf(log.Printf),
-		)
-		defer cancel()
-
-		// Adicionar timeout
-		ctx, cancel = context.WithTimeout(ctx, 60*time.Second)
-		defer cancel()
-
-		// Variáveis para armazenar o HTML extraído
+		// Tentar extrair os dados com retry
 		var html string
-
-		// Navegar para a URL e extrair o HTML
-		err := chromedp.Run(ctx,
-			chromedp.Navigate(url),
-			chromedp.WaitVisible(".recent-matches", chromedp.ByQuery),
-			chromedp.OuterHTML("body", &html),
-		)
-
-		if err != nil {
-			log.Printf("Erro ao extrair dados da região %s: %v", region, err)
-			continue
+		var err error
+		for i := 0; i < maxRetries; i++ {
+			html, err = extractHTML(url)
+			if err == nil {
+				break
+			}
+			log.Printf("Tentativa %d falhou: %v", i+1, err)
+			time.Sleep(retryDelay)
 		}
 
-		log.Printf("HTML extraído com sucesso da região %s", region)
+		if err != nil {
+			log.Printf("Erro ao extrair dados da região %s após %d tentativas: %v", region, maxRetries, err)
+			continue
+		}
 
 		// Processar o HTML
 		matchResults, err := parseHTML(html, region)
@@ -113,37 +101,88 @@ func ScrapeMatchResults() error {
 	return nil
 }
 
+// extractHTML extrai o HTML da página usando Chrome headless
+func extractHTML(url string) (string, error) {
+	// Configurar contexto para o Chrome headless
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", true),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
+	)
+
+	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer cancel()
+
+	ctx, cancel := chromedp.NewContext(
+		allocCtx,
+		chromedp.WithLogf(log.Printf),
+	)
+	defer cancel()
+
+	// Adicionar timeout
+	ctx, cancel = context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	// Variável para armazenar o HTML extraído
+	var html string
+
+	// Navegar para a URL e extrair o HTML
+	err := chromedp.Run(ctx,
+		chromedp.Navigate(url),
+		chromedp.WaitVisible(".recent-matches", chromedp.ByQuery),
+		chromedp.OuterHTML("body", &html),
+	)
+
+	if err != nil {
+		return "", fmt.Errorf("erro ao extrair HTML: %v", err)
+	}
+
+	return html, nil
+}
+
 // parseHTML processa o HTML extraído para obter resultados de partidas
 func parseHTML(html, region string) ([]*models.MatchResult, error) {
-	// Implementação simplificada para o exemplo
-	// Em uma implementação real, você usaria um parser HTML como goquery
+	// Criar um novo documento goquery
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if err != nil {
+		return nil, fmt.Errorf("erro ao criar documento: %v", err)
+	}
 
 	var results []*models.MatchResult
 
-	// Extrair blocos de partidas
-	matchBlocks := strings.Split(html, "class=\"match-card\"")
-
-	for i, block := range matchBlocks {
-		if i == 0 {
-			continue // Pular o primeiro split que não contém partida
-		}
-
+	// Encontrar todos os cards de partida
+	doc.Find(".match-card").Each(func(i int, s *goquery.Selection) {
 		// Extrair dados básicos da partida
-		matchID := extractDataAttribute(block, "data-match-id")
+		matchID, _ := s.Attr("data-match-id")
 		if matchID == "" {
 			matchID = fmt.Sprintf("%s-%d", region, i)
 		}
 
-		dateStr := extractText(block, "class=\"match-date\"")
-		teamA := extractText(block, "class=\"team-a team-name\"")
-		teamB := extractText(block, "class=\"team-b team-name\"")
-		scoreAStr := extractText(block, "class=\"team-a score\"")
-		scoreBStr := extractText(block, "class=\"team-b score\"")
+		dateStr := s.Find(".match-date").Text()
+		teamA := s.Find(".team-a .team-name").Text()
+		teamB := s.Find(".team-b .team-name").Text()
+		scoreAStr := s.Find(".team-a .score").Text()
+		scoreBStr := s.Find(".team-b .score").Text()
 
 		// Converter valores
-		date, _ := time.Parse("02 Jan 2006", dateStr)
-		scoreA, _ := strconv.Atoi(scoreAStr)
-		scoreB, _ := strconv.Atoi(scoreBStr)
+		date, err := time.Parse("02 Jan 2006", strings.TrimSpace(dateStr))
+		if err != nil {
+			log.Printf("Erro ao converter data: %v", err)
+			return
+		}
+
+		scoreA, err := strconv.Atoi(strings.TrimSpace(scoreAStr))
+		if err != nil {
+			log.Printf("Erro ao converter score A: %v", err)
+			return
+		}
+
+		scoreB, err := strconv.Atoi(strings.TrimSpace(scoreBStr))
+		if err != nil {
+			log.Printf("Erro ao converter score B: %v", err)
+			return
+		}
 
 		// Determinar vencedor
 		var winner string
@@ -155,6 +194,25 @@ func parseHTML(html, region string) ([]*models.MatchResult, error) {
 			winner = "Empate"
 		}
 
+		// Extrair informações dos jogadores
+		var players []models.Player
+		s.Find(".player-stats").Each(func(_ int, playerSel *goquery.Selection) {
+			player := models.Player{
+				Name:        strings.TrimSpace(playerSel.Find(".player-name").Text()),
+				Team:        strings.TrimSpace(playerSel.Find(".team-name").Text()),
+				Position:    strings.TrimSpace(playerSel.Find(".position").Text()),
+				Champion:    strings.TrimSpace(playerSel.Find(".champion").Text()),
+				Kills:       parseInt(playerSel.Find(".kills").Text()),
+				Deaths:      parseInt(playerSel.Find(".deaths").Text()),
+				Assists:     parseInt(playerSel.Find(".assists").Text()),
+				CS:          parseInt(playerSel.Find(".cs").Text()),
+				Gold:        parseInt(playerSel.Find(".gold").Text()),
+				DamageDealt: parseInt(playerSel.Find(".damage-dealt").Text()),
+				VisionScore: parseInt(playerSel.Find(".vision-score").Text()),
+			}
+			players = append(players, player)
+		})
+
 		// Criar objeto de resultado
 		result := &models.MatchResult{
 			ID:        primitive.NewObjectID(),
@@ -165,6 +223,7 @@ func parseHTML(html, region string) ([]*models.MatchResult, error) {
 			ScoreA:    scoreA,
 			ScoreB:    scoreB,
 			Region:    region,
+			Players:   players,
 			Winner:    winner,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -172,50 +231,13 @@ func parseHTML(html, region string) ([]*models.MatchResult, error) {
 
 		// Adicionar à lista de resultados
 		results = append(results, result)
-	}
+	})
 
 	return results, nil
 }
 
-// extractText extrai texto de um elemento HTML
-func extractText(html, selector string) string {
-	start := strings.Index(html, selector)
-	if start == -1 {
-		return ""
-	}
-
-	// Avançar para o conteúdo
-	contentStartOffset := strings.Index(html[start:], ">")
-	if contentStartOffset == -1 {
-		return ""
-	}
-	contentStart := start + contentStartOffset + 1
-
-	// Encontrar o fim do elemento
-	contentEndOffset := strings.Index(html[contentStart:], "<")
-	if contentEndOffset == -1 {
-		return ""
-	}
-	contentEnd := contentStart + contentEndOffset
-
-	// Extrair e limpar o texto
-	text := html[contentStart:contentEnd]
-	return strings.TrimSpace(text)
-}
-
-// extractDataAttribute extrai valor de um atributo data-*
-func extractDataAttribute(html, attrName string) string {
-	attrStart := strings.Index(html, attrName+"=\"")
-	if attrStart == -1 {
-		return ""
-	}
-
-	valueStart := attrStart + len(attrName) + 2 // +2 para pular ="
-	valueEndOffset := strings.Index(html[valueStart:], "\"")
-	if valueEndOffset == -1 {
-		return ""
-	}
-	valueEnd := valueStart + valueEndOffset
-
-	return html[valueStart:valueEnd]
+// parseInt converte string para int com tratamento de erro
+func parseInt(s string) int {
+	i, _ := strconv.Atoi(strings.TrimSpace(s))
+	return i
 }
