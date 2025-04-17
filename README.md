@@ -6,7 +6,7 @@
   <h3>Uma API poderosa para obter resultados e estatísticas de jogos da LTA</h3>
   <p>
     
-[![Go](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml)
+[![Go](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml/badge.svg)](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml)
 
   <img src="https://img.shields.io/badge/MongoDB-4.4+-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB">
     <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
@@ -18,12 +18,13 @@
 
 ## 📋 Índice
 
-- [Sobre](#-sobre)
 - [Funcionalidades](#-funcionalidades)
 - [Tecnologias](#-tecnologias)
 - [Instalação](#-instalação)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Configuração](#-configuração)
 - [Endpoints da API](#-endpoints-da-api)
+- [Troubleshooting](#-troubleshooting)
+- [Segurança](#-segurança)
 - [Como Contribuir](#-como-contribuir)
 - [Licença](#-licença)
 
@@ -32,7 +33,7 @@
 ##  Sobre
 
 A **LTA Match Results API** é uma solução completa para extrair, armazenar e disponibilizar dados sobre os resultados de partidas da Liga de League of Legends (LTA).
-Utilizando técnicas  de web scraping, a API coleta automaticamente informações de jogos das regiões Sul e Norte, fornecendo dados detalhados sobre desempenho de equipes e jogadores.
+Utilizando técnicas de web scraping, a API coleta automaticamente informações de jogos das regiões Sul e Norte, fornecendo dados detalhados sobre desempenho de equipes e jogadores.
 
 Ideal para:
 - Sites de estatísticas e análises de e-sports
@@ -123,7 +124,35 @@ docker-compose up -d
 # A API estará disponível em http://localhost:8080
 ```
 
-<br>
+## 🔐 Configuração
+
+### Variáveis de Ambiente
+
+O projeto requer as seguintes variáveis de ambiente:
+
+```env
+# Configurações do Servidor
+PORT=8080
+
+# Configurações do MongoDB
+MONGODB_USERNAME=
+MONGODB_PASSWORD=
+MONGODB_CLUSTER=
+MONGODB_DATABASE=
+
+# Configurações de Segurança
+ADMIN_API_KEY=
+```
+
+### Configuração do MongoDB
+
+1. Crie um cluster no MongoDB Atlas
+2. Configure o acesso à rede (IP whitelist)
+3. Crie um usuário com permissões de leitura/escrita
+4. Obtenha a string de conexão:
+   ```
+   mongodb+srv://<username>:<password>@<cluster>/<database>?retryWrites=true&w=majority
+   ```
 
 <br>
 
@@ -192,8 +221,7 @@ Obter detalhes de uma partida específica.
       "cs": 215,
       "damageDealt": 18500,
       "visionScore": 32
-    },
-    // outros jogadores...
+    }
   ],
   "winner": "PAIN",
   "duration": "32:15",
@@ -242,8 +270,7 @@ Obter estatísticas agregadas de um time.
       "games": 8,
       "wins": 6,
       "winRate": 75.0
-    },
-    // outros campeões...
+    }
   ]
 }
 ```
@@ -263,6 +290,50 @@ Atualizar um resultado existente.
 
 #### `DELETE /api/v1/admin/results/:matchId`
 Excluir um resultado.
+
+<br>
+
+## 🐛 Troubleshooting
+
+### Problemas comuns e soluções:
+
+1. **Erro de conexão com o MongoDB**
+   - Verifique se as credenciais estão corretas
+   - Confirme se o IP está na whitelist
+   - Verifique se o cluster está online
+
+2. **Erro no scraping**
+   - Verifique se o Chrome/Chromium está instalado
+   - Confirme se as URLs estão acessíveis
+   - Verifique os logs para mais detalhes
+
+3. **Erro de autenticação**
+   - Verifique se a chave de API está correta
+   - Confirme se o header `X-API-Key` está sendo enviado
+   - Verifique se a chave está configurada no `.env`
+
+### Logs
+Os logs são exibidos no console e incluem:
+- Conexão com o banco de dados
+- Operações de scraping
+- Erros e exceções
+- Requisições à API
+
+<br>
+
+## 🔒 Segurança
+
+### Autenticação da API
+- Todas as rotas administrativas requerem uma chave de API
+- Configure a variável `ADMIN_API_KEY` no arquivo `.env`
+- Inclua a chave no header `X-API-Key` das requisições
+
+### Boas Práticas
+- Nunca compartilhe sua chave de API
+- Use HTTPS em produção
+- Mantenha as dependências atualizadas
+- Monitore os logs regularmente
+- Implemente rate limiting em produção
 
 <br>
 
