@@ -6,7 +6,7 @@
   <h3>Uma API poderosa para obter resultados e estatísticas de jogos da LTA</h3>
   <p>
     
-[![Go](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml)
+[![Go](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml/badge.svg)](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml)
 
   <img src="https://img.shields.io/badge/MongoDB-4.4+-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB">
     <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
