@@ -104,8 +104,9 @@ func ScrapeMatchResults() error {
 
 // extractHTML extrai o HTML da página usando Chrome headless
 func extractHTML(url string) (string, error) {
-	
-	chromePath := ""C:\Program Files\Google\Chrome\Application\chrome.exe""
+	// Definir o caminho para o executável do Chrome (ajuste se necessário)
+	// Tenta os locais mais comuns no Windows.
+	chromePath := ""
 	possiblePaths := []string{
 		`C:\Program Files\Google\Chrome\Application\chrome.exe`,
 		`C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`,
