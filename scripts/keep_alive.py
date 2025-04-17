@@ -10,7 +10,7 @@ requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
 def keep_alive():
     # URL da API (pode ser configurada via variável de ambiente)
-    api_url = os.getenv('API_URL', 'https://lta-results-api.onrender.com')
+    api_url = os.getenv('API_URL', 'https://lta-results-api-docker.onrender.com')
     health_check_url = f"{api_url}/health"
     
     # Intervalo entre requisições (em segundos)
