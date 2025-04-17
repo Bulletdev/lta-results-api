@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	_ "net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -103,13 +104,35 @@ func ScrapeMatchResults() error {
 
 // extractHTML extrai o HTML da página usando Chrome headless
 func extractHTML(url string) (string, error) {
+	
+	chromePath := ""C:\Program Files\Google\Chrome\Application\chrome.exe""
+	possiblePaths := []string{
+		`C:\Program Files\Google\Chrome\Application\chrome.exe`,
+		`C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`,
+		// Adicione outros caminhos se o Chrome estiver em local diferente
+	}
+	for _, p := range possiblePaths {
+		if _, err := os.Stat(p); err == nil {
+			chromePath = p
+			log.Printf("Usando executável do Chrome encontrado em: %s", chromePath)
+			break
+		}
+	}
+
 	// Configurar contexto para o Chrome headless
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		// Se encontrou um caminho, usa ele
 		chromedp.Flag("headless", true),
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("disable-dev-shm-usage", true),
 	)
+	// Adiciona o caminho do executável se ele foi encontrado
+	if chromePath != "" {
+		opts = append(opts, chromedp.ExecPath(chromePath))
+	} else {
+		log.Println("AVISO: Não foi possível encontrar o executável do Chrome nos caminhos padrão. Tentando usar o PATH.")
+	}
 
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	defer cancel()
