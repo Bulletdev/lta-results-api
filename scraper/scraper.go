@@ -26,7 +26,7 @@ var LTA_URLS = map[string]string{
 const (
 	maxRetries = 3
 	retryDelay = 5 * time.Second
-	timeout    = 90 * time.Second
+	timeout    = 180 * time.Second
 )
 
 // ScheduleScraping configura o agendamento do scraping
@@ -140,7 +140,7 @@ func extractHTML(url string) (string, error) {
 		chromedp.Navigate(url),
 		chromedp.WaitVisible(".recent-matches", chromedp.ByQuery), // Ajuste o seletor se necessário
 		chromedp.Sleep(2*time.Second),
-		chromedp.OuterHTML("body", &html),
+		chromedp.OuterHTML(".recent-matches", &html, chromedp.ByQuery),
 	)
 
 	if err != nil {
