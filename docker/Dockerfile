@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/lta-
 # Estágio 2: Runner
 FROM debian:12-slim
 
-# Instalar dependências do sistema, incluindo fontes e, o mais importante, Google Chrome
+# Instalar dependências do sistema, incluindo fontes, Google Chrome e dnsutils (para nslookup)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
@@ -58,6 +58,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     lsb-release \
     wget \
     xdg-utils \
+    dnsutils \
     && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && apt-get install -y ./google-chrome-stable_current_amd64.deb \
     # Limpar cache do apt

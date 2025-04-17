@@ -13,15 +13,9 @@ import (
 	"github.com/bulletdev/lta-results-api/api"
 	"github.com/bulletdev/lta-results-api/database"
 	"github.com/bulletdev/lta-results-api/scraper"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Carregar variáveis de ambiente
-	if err := godotenv.Load(); err != nil {
-		log.Println("Arquivo .env não encontrado, usando variáveis de ambiente do sistema")
-	}
-
 	// Conectar ao banco de dados
 	if err := database.Connect(); err != nil {
 		log.Fatalf("Erro ao conectar ao banco de dados: %v", err)

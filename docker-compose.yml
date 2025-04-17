@@ -1,17 +1,21 @@
-version: '3.8'
-
 services:
   lta-results-api:
     build:
       context: .
       dockerfile: docker/Dockerfile
     container_name: lta-results-api
+    # Descomentar ports para a configuração padrão
     ports:
       # Mapeia a porta definida em .env (ou 4444) para a mesma porta no host
       # Exemplo: Se PORT=8080 no .env, mapeia 8080 (host) -> 8080 (container)
       - "${PORT:-4444}:${PORT:-4444}"
     env_file:
       - .env
+    # Manter a configuração de DNS, embora não funcione localmente para você,
+    # pode ser útil em outros ambientes como o Render.
+    dns:
+     - 8.8.8.8
+     - 1.1.1.1
     # Volumes podem ser úteis para desenvolvimento com hot-reload,
     # mas para um build simples, não são estritamente necessários.
     # volumes:
@@ -21,4 +25,3 @@ services:
 # Redes (opcional, mas bom para organização)
 # networks:
 #   lta-net:
-#     driver: bridge
