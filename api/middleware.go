@@ -1,10 +1,10 @@
 package api
 
 import (
-	"log" // Adicione este import
+	"log"
 	"net/http"
 	"os"
-	"strings" // Adicione este import
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
