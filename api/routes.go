@@ -29,10 +29,28 @@ func SetupRouter() *gin.Engine {
 
 	// Health Check
 	router.GET("/health", func(c *gin.Context) {
+		// Adicionar headers importantes
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
+
+		// Responder com status 200 e dados
 		c.JSON(200, gin.H{
-			"status": "healthy",
-			"time":   time.Now().Format(time.RFC3339),
+			"status":  "healthy",
+			"time":    time.Now().Format(time.RFC3339),
+			"version": "1.0.0",
 		})
+	})
+
+	// Adicionar rota OPTIONS para o health check
+	router.OPTIONS("/health", func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
+		c.Status(204)
 	})
 
 	// Rotas públicas
