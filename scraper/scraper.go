@@ -121,9 +121,10 @@ func extractHTML(url string) (string, error) {
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	defer cancel()
 
+	// Alterado para logar apenas erros do chromedp, reduzindo verbosidade
 	ctx, cancel := chromedp.NewContext(
 		allocCtx,
-		chromedp.WithLogf(log.Printf),
+		chromedp.WithErrorf(log.Printf),
 	)
 	defer cancel()
 
