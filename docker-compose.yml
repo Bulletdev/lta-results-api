@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  lta-results-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: lta-results-api
+    ports:
+      # Mapeia a porta definida em .env (ou 4444) para a mesma porta no host
+      # Exemplo: Se PORT=8080 no .env, mapeia 8080 (host) -> 8080 (container)
+      - "${PORT:-4444}:${PORT:-4444}"
+    env_file:
+      - .env
+    # Volumes podem ser úteis para desenvolvimento com hot-reload,
+    # mas para um build simples, não são estritamente necessários.
+    # volumes:
+    #   - .:/app # Monta o código local dentro do container
+    restart: unless-stopped
+
+# Redes (opcional, mas bom para organização)
+# networks:
+#   lta-net:
+#     driver: bridge
