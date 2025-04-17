@@ -74,13 +74,15 @@ COPY --from=builder /app/lta-results-api /app/lta-results-api
 # No Render, é melhor usar as variáveis de ambiente do serviço.
 # COPY .env .env
 
-# Criar diretório para dados do Chrome ANTES de mudar o usuário
+# Criar diretório para dados do Chrome (boa prática)
 RUN mkdir /app/chrome-data
 
-# Criar um usuário não-root para executar a aplicação
-RUN groupadd -r appuser && useradd --no-log-init -r -g appuser appuser
-# Garantir que o diretório de trabalho e o diretório de dados do chrome pertençam ao novo usuário
-RUN chown -R appuser:appuser /app
+# Criar um usuário não-root com um diretório home padrão
+RUN useradd -ms /bin/bash appuser
+
+# Garantir que o diretório de trabalho, o diretório de dados do chrome 
+# e o diretório home pertençam ao novo usuário
+RUN chown -R appuser:appuser /app /home/appuser
 USER appuser
 
 # Expor a porta que a aplicação usa (obtida da variável PORT)
