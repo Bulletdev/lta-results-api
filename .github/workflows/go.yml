@@ -28,7 +28,10 @@ jobs:
           ${{ runner.os }}-go-
 
     - name: Get dependencies
-      run: go mod download
+      run: |
+        go mod tidy
+        go mod download
+        go mod verify
 
     - name: Build
       run: go build -v ./...
