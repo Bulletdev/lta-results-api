@@ -1,5 +1,5 @@
 # Estágio 1: Builder
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Instalar git e ferramentas C para compilação (necessário para algumas dependências Go)
 RUN apk update && apk add --no-cache git build-base
