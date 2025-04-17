@@ -48,10 +48,21 @@ func ScrapeMatchResults() error {
 	// Para cada região, extrair os resultados
 	for region, url := range LTA_URLS {
 		log.Printf("Extraindo resultados da região %s...", region)
+		log.Printf("URL: %s", url)
 
 		// Configurar contexto para o Chrome headless
+		opts := append(chromedp.DefaultExecAllocatorOptions[:],
+			chromedp.Flag("headless", true),
+			chromedp.Flag("disable-gpu", true),
+			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("disable-dev-shm-usage", true),
+		)
+
+		allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+		defer cancel()
+
 		ctx, cancel := chromedp.NewContext(
-			context.Background(),
+			allocCtx,
 			chromedp.WithLogf(log.Printf),
 		)
 		defer cancel()
@@ -75,12 +86,16 @@ func ScrapeMatchResults() error {
 			continue
 		}
 
+		log.Printf("HTML extraído com sucesso da região %s", region)
+
 		// Processar o HTML
 		matchResults, err := parseHTML(html, region)
 		if err != nil {
 			log.Printf("Erro ao processar HTML da região %s: %v", region, err)
 			continue
 		}
+
+		log.Printf("Processados %d resultados da região %s", len(matchResults), region)
 
 		// Salvar os resultados
 		for _, result := range matchResults {
