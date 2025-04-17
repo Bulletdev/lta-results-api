@@ -27,6 +27,7 @@
 - [Segurança](#-segurança)
 - [Como Contribuir](#-como-contribuir)
 - [Licença](#-licença)
+- [Mantendo a API Ativa](#-mantendo-a-api-ativa)
 
 <br>
 
@@ -370,6 +371,31 @@ git push origin feature/nova-funcionalidade
 ## 📜 Licença
 
 Este projeto está licenciado sob a [Licença MIT](LICENSE).
+
+<br>
+
+## Mantendo a API Ativa
+
+Para evitar que a API seja desligada por inatividade no Render, você pode usar o script de keep-alive:
+
+1. Instale as dependências:
+```bash
+cd scripts
+pip install -r requirements.txt
+```
+
+2. Execute o script:
+```bash
+python keep_alive.py
+```
+
+O script fará requisições a cada 30 segundos para o endpoint `/health`, mantendo a API ativa.
+
+Você também pode configurar a URL da API através da variável de ambiente `API_URL`:
+```bash
+export API_URL=https://sua-api-url.com
+python keep_alive.py
+```
 
 <br>
 

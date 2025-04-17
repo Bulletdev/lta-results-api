@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +26,14 @@ func SetupRouter() *gin.Engine {
 
 	// Middleware de autenticação para rotas protegidas
 	authMiddleware := AuthMiddleware()
+
+	// Health Check
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "healthy",
+			"time":   time.Now().Format(time.RFC3339),
+		})
+	})
 
 	// Rotas públicas
 	v1 := router.Group("/api/v1")
