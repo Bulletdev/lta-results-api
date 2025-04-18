@@ -144,7 +144,7 @@ func extractHTML(ctx context.Context, url string) (string, error) {
 	err := chromedp.Run(ctx, // Usa o contexto passado como argumento
 		chromedp.Navigate(url),
 		chromedp.WaitVisible(".recent-matches", chromedp.ByQuery), // Ajuste o seletor se necessário
-		chromedp.Sleep(2*time.Second),
+		// Extrair o HTML do container específico em vez do body inteiro
 		chromedp.OuterHTML(".recent-matches", &html, chromedp.ByQuery),
 	)
 

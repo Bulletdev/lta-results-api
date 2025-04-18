@@ -21,7 +21,7 @@ func SetupRouter() *gin.Engine {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "X-API-Key"}
 	router.Use(cors.New(config))
 
 	// Middleware de autenticação para rotas protegidas
