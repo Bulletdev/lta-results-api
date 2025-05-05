@@ -3,7 +3,7 @@
 <div align="center">
   <img src="https://ltafantasy.com/public/lta-fantasy-logo.svg" alt="LTA API Logo" width="300">
   <br>
-  <h3>Uma API poderosa para obter resultados e estatísticas de jogos da LTA</h3>
+  <h3>Uma API poderosa para obter resultados e estatísticas de jogos da LTA</h3> 
   <p>
     
 [![Go](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml/badge.svg)](https://github.com/Bulletdev/lta-results-api/actions/workflows/go.yml)
